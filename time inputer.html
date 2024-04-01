@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Inputter App</title>
+</head>
+<body>
+    <h1>Time Inputter App</h1>
+    <form id="timeInputForm">
+        <label for="hourlyRate">Hourly Rate (£):</label>
+        <input type="number" id="hourlyRate" name="hourlyRate" min="0" step="0.01" value="16" required>
+        <br>
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+        <br>
+        <label for="startTime">Start Time:</label>
+        <input type="time" id="startTime" name="startTime" required>
+        <br>
+        <label for="endTime">End Time:</label>
+        <input type="time" id="endTime" name="endTime" required>
+        <br>
+        <button type="button" onclick="addTimeEntry()">Add Time Entry</button>
+    </form>
+
+    <div id="timeEntries">
+        <h2>Time Entries</h2>
+        <ul id="entriesList"></ul>
+    </div>
+
+    <div id="totals">
+        <h2>Totals</h2>
+        <p>Total Hours: <span id="totalHours">0</span></p>
+        <p>Total Cost: £<span id="totalCost">0</span></p>
+        <button onclick="calculateTotals()">Calculate</button>
+        <button onclick="shareResults()">Share</button>
+    </div>
+
+    <script>
+        let hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
+        let timeEntries = [];
+
+        function addTimeEntry() {
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!validateTimeEntry(date, startTime, endTime)) {
+                alert("Please enter valid date and time");
+                return;
+            }
+
+            timeEntries.push({ date, startTime, endTime });
+
+            const entry = document.createElement('li');
+            entry.textContent = `Date: ${date}, Start Time: ${startTime}, End Time: ${endTime}`;
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = function() {
+                deleteTimeEntry(entry);
+            };
+            entry.appendChild(deleteButton);
+            document.getElementById('entriesList').appendChild(entry);
+
+            document.getElementById('date').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+        }
+
+        function validateTimeEntry(date, startTime, endTime) {
+            const startDate = new Date(date + 'T' + startTime);
+            const endDate = new Date(date + 'T' + endTime);
+            return startDate < endDate;
+        }
+
+        function deleteTimeEntry(entry) {
+            const index = Array.from(entry.parentNode.children).indexOf(entry);
+            timeEntries.splice(index, 1);
+            entry.remove();
+        }
+
+        function calculateTotals() {
+            let totalHours = 0;
+            let totalCost = 0;
+
+            timeEntries.forEach(entry => {
+                const start = new Date(`2024-01-01T${entry.startTime}`);
+                const end = new Date(`2024-01-01T${entry.endTime}`);
+                const hours = (end - start) / (1000 * 60 * 60);
+                totalHours += hours;
+                totalCost += hours * hourlyRate;
+            });
+
+            document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+        }
+
+        function shareResults() {
+            const totalHours = document.getElementById('totalHours').textContent;
+            const totalCost = document.getElementById('totalCost').textContent;
+
+            let entriesInfo = "";
+            timeEntries.forEach(entry => {
+                entriesInfo += `Date: ${entry.date}, Start Time: ${entry.startTime}, End Time: ${entry.endTime}\n`;
+            });
+
+            const message = `Total Hours: ${totalHours}, Total Cost: £${totalCost}\n\nTime Entries:\n${entriesInfo}`;
+
+            // Create a textarea to copy the text to clipboard
+            const textarea = document.createElement('textarea');
+            textarea.value = message;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            alert("Results copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
